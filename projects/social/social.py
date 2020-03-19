@@ -1,3 +1,6 @@
+from util import Stack, Queue
+import random
+
 class User:
     def __init__(self, name):
         self.name = name
@@ -38,15 +41,20 @@ class SocialGraph:
 
         The number of users must be greater than the average number of friendships.
         """
-        # Reset graph
         self.last_id = 0
         self.users = {}
         self.friendships = {}
-        # !!!! IMPLEMENT ME
 
-        # Add users
-
-        # Create friendships
+        for i in range(num_users):
+            self.add_user(f"Test_User_{i}")
+        
+        for i in range((num_users * avg_friendships) // 2):
+            rand_int_1 = random.randint(1, num_users)
+            rand_int_2 = random.randint(1, num_users)
+            while rand_int_1 == rand_int_2 or (self.friendships.get(rand_int_1) is not None and rand_int_2 in self.friendships[rand_int_1]):
+                rand_int_2 = random.randint(0, num_users - 1)
+            
+            self.add_friendship(rand_int_1, rand_int_2)
 
     def get_all_social_paths(self, user_id):
         """
@@ -58,13 +66,22 @@ class SocialGraph:
         The key is the friend's ID and the value is the path.
         """
         visited = {}  # Note that this is a dictionary, not a set
-        # !!!! IMPLEMENT ME
+        visited[user_id] = [user_id]
+        q = Queue()
+        q.enqueue([user_id])
+        while q.size() > 0:
+            friend_path = q.dequeue()
+            id = friend_path[-1]
+            for friend_id in self.friendships[id]:
+                if visited.get(friend_id) is None:
+                    visited[friend_id] = friend_path + [friend_id]
+                    q.enqueue(friend_path + [friend_id])
         return visited
 
 
 if __name__ == '__main__':
     sg = SocialGraph()
-    sg.populate_graph(10, 2)
+    sg.populate_graph(100, 2)
     print(sg.friendships)
     connections = sg.get_all_social_paths(1)
     print(connections)
