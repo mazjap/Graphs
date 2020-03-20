@@ -86,4 +86,20 @@ class World:
         print(str)
         print("#####")
 
+    def get_room(self, room_id):
+        return self.rooms.get(room_id)
+
+    def get_unvisited_rooms(self, visited):
+        unvisited = []
+        for room in self.rooms.items():
+            if room[0] not in visited:
+                unvisited.append(room[1])
+
+        return unvisited
+
+    def get_first_unvisited_room(self, visited):
+        for room in self.rooms.items():
+            if room[0] not in visited:
+                return room[1]
+
 

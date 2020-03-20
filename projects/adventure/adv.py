@@ -14,9 +14,9 @@ world = World()
 # You may uncomment the smaller graphs for development and testing purposes.
 # map_file = "maps/test_line.txt"
 # map_file = "maps/test_cross.txt"
-map_file = "maps/test_loop.txt"
+# map_file = "maps/test_loop.txt"
 # map_file = "maps/test_loop_fork.txt"
-# map_file = "maps/main_maze.txt"
+map_file = "maps/main_maze.txt"
 
 # Loads the map into a dictionary
 room_graph=literal_eval(open(map_file, "r").read())
@@ -53,27 +53,39 @@ def generate_graph(room, visited=set()):
             graph.add_vertex(neighbor.id)
             graph.add_undirected_edge(room.id, neighbor.id)
             generate_graph(neighbor, visited)
+    
+def create_path_from_ids(ids):
+    path = []
+    for index in range(len(ids) - 1):
+        room_id = ids[index]
+        room = world.get_room(room_id)
+        exits = room.get_exits()
+        for direction in exits:
+            next_room = room.get_room_in_direction(direction)
+            if next_room.id == ids[index + 1]:
+                path.append(direction)
+                break
+    return path
 
 def move_player(direction, visited):
     player.travel(direction)
     traversal_path.append(direction)
     visited.add(player.current_room.id)
 
-def return_to_unvisited(visited):
-    index = len(traversal_path) - 1
-    direction = get_reverse(traversal_path[index])
-    new_directions = [direction]
-    room = player.current_room.get_room_in_direction(direction)
-    while len(find_untraveled_directions(visited, room)) == 0:
-        index -= 1
-        if index < 0:
+def return_to_unvisited(graph, visited):
+    unvisited_rooms = world.get_unvisited_rooms(visited)
+    index = -1
+    unvisited_room = None
+    while unvisited_room is None:
+        index += 1
+        if index < len(unvisited_rooms):
+            unvisited_room = unvisited_rooms[index]
+        else:
             return []
-        direction = get_reverse(traversal_path[index])
-        new_directions.append(direction)
-        room = room.get_room_in_direction(direction)
-    return new_directions
-        
-        
+    room = player.current_room
+    ids = graph.bfs(room.id, unvisited_room.id)
+    path = create_path_from_ids(ids)
+    return path
 
 def find_untraveled_directions(visited, room):
     directions = room.get_exits()
@@ -92,7 +104,7 @@ def find_untraveled_secondary_direction(visited):
         if len(secondary_exits) > 0:
             return (next_direction, secondary_exits)
 
-def traverse_graph(visited={player.current_room.id}):
+def traverse_graph(graph, visited={player.current_room.id}):
     directions = find_untraveled_directions(visited, player.current_room)
     secondary_directions = find_untraveled_secondary_direction(visited)
     if len(directions) > 0:
@@ -108,21 +120,21 @@ def traverse_graph(visited={player.current_room.id}):
         move_player(direction, visited)
         move_player(direction2, visited)
     else:
-        new_directions = return_to_unvisited(visited)
+        new_directions = return_to_unvisited(graph, visited)
         if len(new_directions) is 0 or len(visited) is world.grid_size:
             return
         else:
             for new_direction in new_directions:
                 move_player(new_direction, visited)
-    traverse_graph(visited)
+    traverse_graph(graph, visited)
 
 
 def generate_path():
-    # room = world.starting_room
-    # graph.add_vertex(room.id)
+    room = world.starting_room
+    graph.add_vertex(room.id)
 
-    # generate_graph(room)
-    traverse_graph()
+    generate_graph(room)
+    traverse_graph(graph)
 
     print(traversal_path)
 
