@@ -27,71 +27,18 @@ world.print_rooms()
 
 player = Player(world.starting_room)
 
-north = 'n'
-south = 's'
-east = 'e'
-west = 'w'
-
 graph = Graph()
 traversal_path = []
 
-# def generate_graph():
-#     graph = Graph()
-#     grid = world.room_grid
-#     for row in range(len(grid)):
-#         for col in range(len(grid[row])):
-#             low_row = row-1
-#             low_col = col-1
-#             room_north = None
-#             room_west = None
-#             room = grid[row][col]
-#             if low_row >= 0:
-#                 room_north = grid[low_row][col]
-#             if low_col >= 0:
-#                 room_west = grid[row][low_col]
-
-#             if room:
-#                 graph.add_vertex(room.id)
-#                 if room_north:
-#                     graph.add_undirected_edge(room.id, room_north.id)
-#                 if room_west:
-#                     graph.add_undirected_edge(room.id, room_west.id)
-
-#     print(graph.dfs('000', '010'))
-#     return graph
-
-# def generate_graph():
-#     graph = Graph()
-#     visited = set()
-#     q = Queue()
-#     room = world.starting_room
-#     previous_room = room
-#     q.enqueue(room)
-#     while q.size > 0:
-#         room = q.dequeue()
-#         visited.add(room.id)
-#         graph.add_vertex(room.id)
-
-#         if previous_room is not room:
-#             graph.add_undirected_edge(room, previous_room)
-
-#         rooms = room.get_exits()
-#         for neighbor in rooms:
-#             q.enqueue(neighbor)
-    
-
-
-#     return graph
-
 def get_reverse(direction):
-    if direction is south:
-        return north
-    elif direction is north:
-        return south
-    elif direction is east:
-        return west
-    elif direction is west:
-        return east
+    if direction is 's':
+        return 'n'
+    elif direction is 'n':
+        return 's'
+    elif direction is 'e':
+        return 'w'
+    elif direction is 'w':
+        return 'e'
     else:
         print(f"Error, direction {direction} is not valid")
 
@@ -111,34 +58,65 @@ def return_to_unvisited(visited):
     count = 0
     index = len(traversal_path) - 1
     exits = player.current_room.get_exits()
-    has_unvisited = False
-    while not has_unvisited:
+    while True:
         for direction in exits:
             room = player.current_room.get_room_in_direction(direction)
-            if room.id not in visited:
+            if room and room.id not in visited:
                 return count
         index -= 1
         new_direction = get_reverse(traversal_path[index])
-        player.travel(new_direction)
+        if index >= 0 and player.current_room.get_room_in_direction(new_direction):
+            player.travel(new_direction)
+        else:
+            return 0
 
+def find_untraveled_directions(visited, room):
+    directions = room.get_exits()
+    possible = []
+    for direction in directions:
+        next_room = room.get_room_in_direction(direction)
+        if next_room.id not in visited:
+            possible.append(direction)
+    return possible
 
-
-
+def find_untraveled_secondary_direction(visited):
+    exits = player.current_room.get_exits()
+    for next_direction in exits:
+        room = player.current_room.get_room_in_direction(next_direction)
+        secondary_exits = find_untraveled_directions(visited, room)
+        if len(secondary_exits) > 0:
+            return (next_direction, secondary_exits)
 
 def traverse_graph(graph, visited={player.current_room.id}, count=1):
-    exits = player.current_room.get_exits()
-    if len(exits) > 0:
-        direction = exits[random.randint(0, len(exits) - 1)]
+    print(traversal_path)
+    directions = find_untraveled_directions(visited, player.current_room)
+    secondary_directions = find_untraveled_secondary_direction(visited)
+    print(len(directions))
+    if len(directions) > 0:
+        direction = directions[random.randint(0, len(directions)-1)]
         room = player.current_room.get_room_in_direction(direction)
-        if room.id not in visited:
+        if room is not None:
             visited.add(room.id)
             count += 1
             player.travel(direction)
             traversal_path.append(direction)
-            traverse_graph(graph, visited, count)
-    if len(visited) != world.grid_size:
-        count += return_to_unvisited(visited)
-        traverse_graph(graph, visited, count)
+    elif secondary_directions:
+        direction = secondary_directions[0]
+        directions_arr = secondary_directions[1]
+        direction2 = directions_arr[random.randint(0, len(directions_arr) - 1)]
+        player.travel(direction)
+        player.travel(direction2)
+
+        visited.add(player.current_room.id)
+        count += 2
+        traversal_path.append(direction); traversal_path.append(direction2)
+    else:
+        add_count = return_to_unvisited(visited)
+        if add_count is 0 or len(visited) is world.grid_size:
+            return
+        else:
+            count += add_count
+    traverse_graph(graph, visited, count)
 
 
 def generate_path():
