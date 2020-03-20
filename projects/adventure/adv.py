@@ -14,9 +14,9 @@ world = World()
 # You may uncomment the smaller graphs for development and testing purposes.
 # map_file = "maps/test_line.txt"
 # map_file = "maps/test_cross.txt"
-# map_file = "maps/test_loop.txt"
+map_file = "maps/test_loop.txt"
 # map_file = "maps/test_loop_fork.txt"
-map_file = "maps/main_maze.txt"
+# map_file = "maps/main_maze.txt"
 
 # Loads the map into a dictionary
 room_graph=literal_eval(open(map_file, "r").read())
@@ -92,7 +92,7 @@ def find_untraveled_secondary_direction(visited):
         if len(secondary_exits) > 0:
             return (next_direction, secondary_exits)
 
-def traverse_graph(graph, visited={player.current_room.id}):
+def traverse_graph(visited={player.current_room.id}):
     directions = find_untraveled_directions(visited, player.current_room)
     secondary_directions = find_untraveled_secondary_direction(visited)
     if len(directions) > 0:
@@ -114,15 +114,15 @@ def traverse_graph(graph, visited={player.current_room.id}):
         else:
             for new_direction in new_directions:
                 move_player(new_direction, visited)
-    traverse_graph(graph, visited)
+    traverse_graph(visited)
 
 
 def generate_path():
-    room = world.starting_room
-    graph.add_vertex(room.id)
+    # room = world.starting_room
+    # graph.add_vertex(room.id)
 
-    generate_graph(room)
-    traverse_graph(graph)
+    # generate_graph(room)
+    traverse_graph()
 
     print(traversal_path)
 
