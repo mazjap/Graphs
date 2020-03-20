@@ -102,4 +102,14 @@ class World:
             if room[0] not in visited:
                 return room[1]
 
+    def get_closest_unvisited_room(self, visited, room_id):
+        closest = 000
+        closest_distance = abs(closest - room_id)
+        for room in self.rooms.items():
+            distance = abs(room[0] - room_id)
+            if distance < closest_distance and room[0] not in visited:
+                closest = room[0]
+        return self.get_room(closest)
+
+
 

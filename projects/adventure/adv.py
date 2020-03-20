@@ -72,16 +72,7 @@ def move_player(direction, visited):
     traversal_path.append(direction)
     visited.add(player.current_room.id)
 
-def return_to_unvisited(graph, visited):
-    unvisited_rooms = world.get_unvisited_rooms(visited)
-    index = -1
-    unvisited_room = None
-    while unvisited_room is None:
-        index += 1
-        if index < len(unvisited_rooms):
-            unvisited_room = unvisited_rooms[index]
-        else:
-            return []
+def return_to_unvisited(graph, unvisited_room):
     room = player.current_room
     ids = graph.bfs(room.id, unvisited_room.id)
     path = create_path_from_ids(ids)
@@ -104,14 +95,20 @@ def find_untraveled_secondary_direction(visited):
         if len(secondary_exits) > 0:
             return (next_direction, secondary_exits)
 
-def traverse_graph(graph, visited={player.current_room.id}):
+def traverse_graph(graph, undiscovered=Stack(), visited={player.current_room.id}):
     directions = find_untraveled_directions(visited, player.current_room)
     secondary_directions = find_untraveled_secondary_direction(visited)
     if len(directions) > 0:
-        direction = directions[random.randint(0, len(directions)-1)]
-        room = player.current_room.get_room_in_direction(direction)
-        if room is not None:
-            move_player(direction, visited)
+        direction = None
+        for index in range(len(directions)):
+            if index == 0:
+                direction = directions[index]
+            else:
+                room = player.current_room.get_room_in_direction(directions[index])
+                if room is not None and room.id not in visited:
+                    undiscovered.push(room)
+        print(undiscovered.stack)
+        move_player(direction, visited)
     elif secondary_directions:
         direction = secondary_directions[0]
         directions_arr = secondary_directions[1]
@@ -120,13 +117,17 @@ def traverse_graph(graph, visited={player.current_room.id}):
         move_player(direction, visited)
         move_player(direction2, visited)
     else:
-        new_directions = return_to_unvisited(graph, visited)
-        if len(new_directions) is 0 or len(visited) is world.grid_size:
-            return
-        else:
-            for new_direction in new_directions:
-                move_player(new_direction, visited)
-    traverse_graph(graph, visited)
+        if undiscovered.size() > 0:
+            room = undiscovered.pop()
+            path = return_to_unvisited(graph, room)
+            for room_direction in path:
+                move_player(room_direction, visited)
+    if len(visited) > world.grid_size and len(undiscovered.stack) == 0:
+        print("Returning")
+        return
+
+    
+    traverse_graph(graph, undiscovered, visited)
 
 
 def generate_path():
@@ -140,7 +141,6 @@ def generate_path():
 
 # Fill this out with directions to walk
 # traversal_path = ['n', 'n']
-
 generate_path()
 
 
@@ -164,12 +164,12 @@ else:
 #######
 # UNCOMMENT TO WALK AROUND
 #######
-player.current_room.print_room_description(player)
-while True:
-    cmds = input("-> ").lower().split(" ")
-    if cmds[0] in ["n", "s", "e", "w"]:
-        player.travel(cmds[0], True)
-    elif cmds[0] == "q":
-        break
-    else:
-        print("I did not understand that command.")
+# player.current_room.print_room_description(player)
+# while True:
+#     cmds = input("-> ").lower().split(" ")
+#     if cmds[0] in ["n", "s", "e", "w"]:
+#         player.travel(cmds[0], True)
+#     elif cmds[0] == "q":
+#         break
+#     else:
+#         print("I did not understand that command.")
